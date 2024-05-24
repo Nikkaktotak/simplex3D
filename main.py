@@ -4,36 +4,21 @@ import numpy as np
 from scipy.spatial import ConvexHull
 import buildModelLib as ml
 import time
-from tqdm import tqdm
+from keras.utils import Progbar
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
+import os
 
 # Константи
 number_of_repeating = 10  # кількість запусків програми з цими ж даними
 n = 0  # кількість точок всередині кулі
 r = 1000  # радіус кулі
-initial_point_counts = [500, 1000, 5000, 10000, 20000]  # початкова кількість точок
+initial_point_counts = [500, 1000, 2000, 5000, 10000, 15000]  # початкова кількість точок
 target_vertex_count_values = [100]  # кількість точок, до якої потрібно видаляти вершини
-xml_file_path = "D:\\Article\\simplex3D\\statistics\\statistics2.xml"  # Шлях до XML файлу
+xml_file_path = os.path.join(os.path.dirname(__file__), "statistics/statistics2.xml")  # Шлях до XML файлу
 
 # Створення кореневого елемента XML
 root = ET.Element("statistics")
-
-# Закоментовано: Запуск функції повного перебору для значень initial_point_counts 50 та 100
-# full_times = {}
-# for initial_point_count in [50, 100]:
-#     if initial_point_count in initial_point_counts:
-#         # Генерація точок
-#         points, V = ml.generatePoints(n, initial_point_count, r)
-#
-#         # Запуск функції повного перебору на початковому наборі точок
-#         start_full_time = time.time()
-#         max_simplex_full, max_volume_full = ml.find_max_volume_simplex(points)
-#         end_full_time = time.time()
-#         full_time = end_full_time - start_full_time
-#
-#         # Зберігання часу повного перебору
-#         full_times[initial_point_count] = full_time
 
 for initial_point_count in initial_point_counts:
     initial_block = ET.SubElement(root, "initial_point_count_block", count=str(initial_point_count))
@@ -43,9 +28,10 @@ for initial_point_count in initial_point_counts:
             total_success_rate = 0
             success_rates = []
 
-            print(f"Запуск програми для пари (початкова кількість точок: {initial_point_count}, цільова кількість точок: {target_vertex_count})")
+            print(f"\nЗапуск програми для пари (початкова кількість точок: {initial_point_count}, цільова кількість точок: {target_vertex_count})")
+            progbar = Progbar(target=number_of_repeating)
 
-            for i in tqdm(range(number_of_repeating), desc=f"Пара (initial_point_count={initial_point_count}, target_vertex_count={target_vertex_count})", leave=True):
+            for i in range(number_of_repeating):
                 # Генерація точок
                 points, V = ml.generatePoints(n, initial_point_count, r)
 
@@ -74,20 +60,19 @@ for initial_point_count in initial_point_counts:
                 success_rates.append(success_rate)
                 total_success_rate += success_rate
 
-                # Додавання результатів до XML для кожного пробігу
-                run_element = ET.SubElement(initial_block, "run", number=str(i+1))
-                ET.SubElement(run_element, "target_vertex_count").text = str(target_vertex_count)
-                ET.SubElement(run_element, "success_rate").text = f"{success_rate:.2f}"
-
-                # Виведення результатів кожного пробігу
-                print(f"Результати пробігу {i+1} (початкова кількість точок: {initial_point_count}, цільова кількість точок: {target_vertex_count}):")
-                print("Відсоток наближеності значення об'єму:", success_rate, "%")
-                print()
+                # Оновлення прогрес-бару
+                progbar.update(i + 1)
 
             # Обчислення середніх значень
             average_success_rate = round(total_success_rate / number_of_repeating, 2)
             best_success_rate = round(max(success_rates), 2)
             worst_success_rate = round(min(success_rates), 2)
+
+            # Додавання блоку з усіма значеннями успішності до XML
+            all_success_rates_block = ET.SubElement(initial_block, "all_success_rates", target_vertex_count=str(target_vertex_count))
+            for i, rate in enumerate(success_rates, start=1):
+                run_element = ET.SubElement(all_success_rates_block, "run", number=str(i))
+                ET.SubElement(run_element, "success_rate").text = f"{rate:.2f}"
 
             # Додавання середнього значення успішності до XML
             average_element = ET.SubElement(initial_block, "average")
@@ -97,7 +82,7 @@ for initial_point_count in initial_point_counts:
             ET.SubElement(average_element, "worst_success_rate").text = f"{worst_success_rate:.2f}"
 
             # Виведення середніх результатів
-            print(f"\nСередні результати для пари (початкова кількість точок: {initial_point_count}, цільова кількість точок: {target_vertex_count}):")
+            print(f"Середні результати для пари (початкова кількість точок: {initial_point_count}, цільова кількість точок: {target_vertex_count}):")
             print("Середній відсоток наближеності значення об'єму:", average_success_rate, "%")
             print("Найкращий відсоток наближеності значення об'єму:", best_success_rate, "%")
             print("Найгірший відсоток наближеності значення об'єму:", worst_success_rate, "%")

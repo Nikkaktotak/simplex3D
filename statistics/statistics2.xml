@@ -1,0 +1,81 @@
+<?xml version="1.0" ?>
+<statistics>
+    <initial_point_count_block count="100">
+        <all_success_rates target_vertex_count="10">
+            <run number="1">
+                <success_rate>47.45</success_rate>
+            </run>
+            <run number="2">
+                <success_rate>44.98</success_rate>
+            </run>
+            <run number="3">
+                <success_rate>49.91</success_rate>
+            </run>
+            <run number="4">
+                <success_rate>59.54</success_rate>
+            </run>
+            <run number="5">
+                <success_rate>58.44</success_rate>
+            </run>
+            <run number="6">
+                <success_rate>56.51</success_rate>
+            </run>
+            <run number="7">
+                <success_rate>54.17</success_rate>
+            </run>
+            <run number="8">
+                <success_rate>60.85</success_rate>
+            </run>
+            <run number="9">
+                <success_rate>51.88</success_rate>
+            </run>
+            <run number="10">
+                <success_rate>56.72</success_rate>
+            </run>
+        </all_success_rates>
+        <average>
+            <target_vertex_count>10</target_vertex_count>
+            <average_success_rate>54.04</average_success_rate>
+            <best_success_rate>60.85</best_success_rate>
+            <worst_success_rate>44.98</worst_success_rate>
+        </average>
+        <all_success_rates target_vertex_count="20">
+            <run number="1">
+                <success_rate>70.21</success_rate>
+            </run>
+            <run number="2">
+                <success_rate>69.81</success_rate>
+            </run>
+            <run number="3">
+                <success_rate>59.11</success_rate>
+            </run>
+            <run number="4">
+                <success_rate>58.14</success_rate>
+            </run>
+            <run number="5">
+                <success_rate>60.95</success_rate>
+            </run>
+            <run number="6">
+                <success_rate>78.07</success_rate>
+            </run>
+            <run number="7">
+                <success_rate>57.15</success_rate>
+            </run>
+            <run number="8">
+                <success_rate>69.40</success_rate>
+            </run>
+            <run number="9">
+                <success_rate>70.64</success_rate>
+            </run>
+            <run number="10">
+                <success_rate>66.16</success_rate>
+            </run>
+        </all_success_rates>
+        <average>
+            <target_vertex_count>20</target_vertex_count>
+            <average_success_rate>65.96</average_success_rate>
+            <best_success_rate>78.07</best_success_rate>
+            <worst_success_rate>57.15</worst_success_rate>
+        </average>
+    </initial_point_count_block>
+</statistics>
