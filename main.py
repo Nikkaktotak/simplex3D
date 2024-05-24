@@ -14,7 +14,7 @@ n = 0  # кількість точок всередині кулі
 r = 1000  # радіус кулі
 initial_point_counts = [50, 100, 200, 500]  # початкова кількість точок
 target_vertex_count_values = [10, 20, 50, 100]  # кількість точок, до якої потрібно видаляти вершини
-xml_file_path = "D:\\Article\\simplex3D\\statistics.xml"  # Шлях до XML файлу
+xml_file_path = "F:\Projects\simplex3D\statistics.xml"  # Шлях до XML файлу
 
 # Створення кореневого елемента XML
 root = ET.Element("statistics")
