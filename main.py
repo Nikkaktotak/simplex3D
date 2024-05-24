@@ -11,6 +11,7 @@ m = 100 #к-ть точок на сфері
 r = 1000
 points, V = ml.generatePoints(n, m, r)
 
-vertices, edges, faces = ml.createConvexHull(points)
+convex_hull = ml.createConvexHull(points)
+
 
 
