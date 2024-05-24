@@ -2,26 +2,20 @@ import numpy as np
 from scipy.spatial import ConvexHull as SciPyConvexHull
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+import itertools
 
 
 class MyConvexHull:
     def __init__(self, points):
-        """
-        Ініціалізація об'єкта MyConvexHull.
-        Створює опуклу оболонку для заданих точок і візуалізує її.
-        """
         self.points = points
         self.vertices = []
         self.edges = []
         self.faces = []
         self.deleted_vertices = []
         self._compute_hull()
-        self.visualize()  # Побудова зображення після створення об'єкта
+        #self.visualize()  # Побудова зображення після створення об'єкта
 
     def _compute_hull(self):
-        """
-        Обчислює опуклу оболонку для заданих точок, оновлює вершини, грані та ребра.
-        """
         hull = SciPyConvexHull(self.points)
         self.vertices = hull.points.tolist()
         self.faces = hull.simplices.tolist()
@@ -29,15 +23,6 @@ class MyConvexHull:
 
     @staticmethod
     def _compute_edges(faces):
-        """
-        Визначає всі унікальні ребра на основі заданих граней.
-
-        Parameters:
-            faces (list): Список граней.
-
-        Returns:
-            list: Список унікальних ребер.
-        """
         edges = set()
         for face in faces:
             start = face[0]
@@ -48,15 +33,9 @@ class MyConvexHull:
         return list(edges)
 
     def update(self, verticeForDelete):
-        """
-        Оновлює опуклу оболонку шляхом видалення вказаної вершини.
-
-        Parameters:
-            verticeForDelete (int): Індекс вершини, яку потрібно видалити.
-        """
         points = np.array(self.vertices)
 
-        # Знаходження сусідів вершини, яку потрібно видалити
+        # Find the neighbors of the vertex to be deleted
         hull = SciPyConvexHull(points)
         neighbors = set()
         for simplex in hull.simplices:
@@ -65,13 +44,20 @@ class MyConvexHull:
         neighbors.remove(verticeForDelete)
         neighbors = list(neighbors)
 
-        # Видалення вершини
+        # Remove the vertex
         points = np.delete(points, verticeForDelete, axis=0)
 
-        # Перебудова опуклої оболонки для сусідів
-        sub_hull = SciPyConvexHull(points[neighbors])
+        # Update neighbor indices
+        neighbors = [i if i < verticeForDelete else i - 1 for i in neighbors]
 
-        # Оновлення граней та ребер
+        # Check if there are enough points to form a new simplex
+        if len(points) < 4:
+            return
+
+        # Recompute the convex hull for the neighborhood
+        sub_hull = SciPyConvexHull(points)
+
+        # Update faces and edges
         new_faces = sub_hull.simplices
         new_edges = set()
         for face in new_faces:
@@ -81,30 +67,18 @@ class MyConvexHull:
                 start = end
             new_edges.add(tuple(sorted((face[-1], face[0]))))
 
-        # Конвертація множини в список
+        # Convert set to list
         new_edges = list(new_edges)
 
-        # Мапування локальних індексів на глобальні індекси
-        global_faces = []
-        for face in new_faces:
-            global_faces.append([neighbors[i] for i in face])
-
-        global_edges = []
-        for edge in new_edges:
-            global_edges.append([neighbors[i] for i in edge])
-
-        # Оновлення атрибутів об'єкта
+        # Update the attributes directly
         self.vertices = points.tolist()
-        self.edges = global_edges
-        self.faces = global_faces
+        self.edges = new_edges
+        self.faces = new_faces
 
-        # Додавання видаленої вершини до списку
+        # Add the deleted vertex to the list
         self.deleted_vertices.append(verticeForDelete)
 
     def visualize(self):
-        """
-        Візуалізує поточну опуклу оболонку.
-        """
         fig = plt.figure(figsize=(10, 8))  # Збільшений розмір фігури
         ax = fig.add_subplot(111, projection='3d')
 
@@ -137,6 +111,21 @@ class MyConvexHull:
 
 
 def generatePoints(n, m, r, scale_x=2, scale_y=3, scale_z=1):
+    """
+    Генерує n випадкових точок всередині кулі та m точок на поверхні сфери радіусом r.
+    Додає правильний тетраедр, вершини якого лежать на сфері, та застосовує афінне перетворення для отримання еліпсоїда.
+
+    Параметри:
+        n (int): Кількість точок всередині кулі.
+        m (int): Кількість точок на поверхні сфери.
+        r (float): Радіус кулі.
+        scale_x (float): Коефіцієнт масштабування для осі X.
+        scale_y (float): Коефіцієнт масштабування для осі Y.
+        scale_z (float): Коефіцієнт масштабування для осі Z.
+
+    Повертає:
+        np.ndarray: Перетворені вершини.
+    """
     # Генерація n випадкових точок всередині кулі радіусом r
     radii = r * np.random.rand(n) ** (1 / 3)
     phi = np.random.uniform(0, np.pi, n)
@@ -157,14 +146,15 @@ def generatePoints(n, m, r, scale_x=2, scale_y=3, scale_z=1):
     z_sphere = r * np.cos(phi_sphere)
     sphere_points = np.column_stack((x_sphere, y_sphere, z_sphere))
 
-    # Додавання чотирьох точок, які утворюють піраміду
+    # Додавання точок, які утворюють правильний тетраедр
+    sqrt2 = np.sqrt(2)
     pyramid_points = np.array([
         [1, 1, 1],
         [1, -1, -1],
         [-1, 1, -1],
         [-1, -1, 1]
     ])
-    pyramid_points = r * pyramid_points / np.linalg.norm(pyramid_points, axis=1)[:, np.newaxis]
+    pyramid_points = r * pyramid_points / sqrt2
 
     # Об'єднання всіх точок перед перетворенням
     all_points = np.vstack((internal_points, sphere_points, pyramid_points))
@@ -172,16 +162,14 @@ def generatePoints(n, m, r, scale_x=2, scale_y=3, scale_z=1):
     # Застосування афінного перетворення до всіх точок
     transformed_points = applyAffineTransformToEllipse(all_points, scale_x, scale_y, scale_z)
 
-    # Оновлення трансформованих точок тетраедра
-    transformed_pyramid_points = transformed_points[-4:]  # Останні чотири точки
+    # Отримання точок тетраедра після афінного перетворення
+    transformed_pyramid_points = transformed_points[-4:]
 
     # Обчислення об'єму тетраедра
-    a = np.linalg.norm(transformed_pyramid_points[1] - transformed_pyramid_points[0])
-    b = np.linalg.norm(transformed_pyramid_points[2] - transformed_pyramid_points[0])
-    c = np.linalg.norm(transformed_pyramid_points[3] - transformed_pyramid_points[0])
-    V = (a * b * c * np.sqrt(2)) / 12
+    V = calculate_tetrahedron_volume(transformed_pyramid_points)
 
     return transformed_points, V
+
 
 def applyAffineTransformToEllipse(vertices, scale_x=2, scale_y=3, scale_z=1):
     """
@@ -234,3 +222,43 @@ def find_point_for_delete(convex_hull):
         return min_edge[0]
     else:
         return min_edge[1]
+
+
+def calculate_tetrahedron_volume(points):
+    """
+    Обчислює об'єм тетраедра, заданого чотирма точками.
+
+    Parameters:
+        points (ndarray): Масив розмірності (4, 3), що містить координати чотирьох точок.
+
+    Returns:
+        float: Об'єм тетраедра.
+    """
+    a = points[0]
+    b = points[1]
+    c = points[2]
+    d = points[3]
+    volume = np.abs(np.dot(np.cross(b - a, c - a), d - a)) / 6.0
+    return volume
+
+
+def find_max_volume_simplex(points):
+    """
+    Знаходить симплекс з максимальним об'ємом серед усіх можливих комбінацій чотирьох точок.
+
+    Parameters:
+        points (ndarray): Масив розмірності (n, 3), що містить координати точок.
+
+    Returns:
+        tuple: Симплекс з максимальним об'ємом та його об'єм.
+    """
+    max_volume = 0
+    max_volume_simplex = None
+
+    for simplex in itertools.combinations(points, 4):
+        volume = calculate_tetrahedron_volume(np.array(simplex))
+        if volume > max_volume:
+            max_volume = volume
+            max_volume_simplex = simplex
+
+    return max_volume_simplex, max_volume
