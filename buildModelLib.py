@@ -13,7 +13,9 @@ class MyConvexHull:
         self.vertices = []
         self.edges = []
         self.faces = []
+        self.deleted_vertices = []
         self._compute_hull()
+        self.visualize()  # Побудова зображення після створення об'єкта
 
     def _compute_hull(self):
         hull = SciPyConvexHull(self.points)
@@ -77,6 +79,36 @@ class MyConvexHull:
         self.edges = global_edges
         self.faces = global_faces
 
+        # Add the deleted vertex to the list
+        self.deleted_vertices.append(verticeForDelete)
+
+    def visualize(self):
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        poly3d = [np.array(self.vertices)[face] for face in self.faces]
+        ax.add_collection3d(Poly3DCollection(poly3d, facecolors='cyan', linewidths=1, edgecolors='r', alpha=0.25))
+
+        # Відображення вершин, окрім видалених
+        vertices_array = np.array(self.vertices)
+        ax.scatter(vertices_array[:, 0], vertices_array[:, 1], vertices_array[:, 2], color='b')
+
+        max_range = np.array([vertices_array[:, 0].max() - vertices_array[:, 0].min(),
+                              vertices_array[:, 1].max() - vertices_array[:, 1].min(),
+                              vertices_array[:, 2].max() - vertices_array[:, 2].min()]).max() / 2.0
+
+        mid_x = (vertices_array[:, 0].max() + vertices_array[:, 0].min()) * 0.5
+        mid_y = (vertices_array[:, 1].max() + vertices_array[:, 1].min()) * 0.5
+        mid_z = (vertices_array[:, 2].max() + vertices_array[:, 2].min()) * 0.5
+        ax.set_xlim(mid_x - max_range, mid_x + max_range)
+        ax.set_ylim(mid_y - max_range, mid_y + max_range)
+        ax.set_zlim(mid_z - max_range, mid_z + max_range)
+
+        ax.set_xlabel('X-axis')
+        ax.set_ylabel('Y-axis')
+        ax.set_zlabel('Z-axis')
+        plt.show()
+
 
 def generatePoints(n, m, r, scale_x=2, scale_y=3, scale_z=1):
     # Генерація n випадкових точок всередині кулі радіусом r
@@ -125,35 +157,6 @@ def generatePoints(n, m, r, scale_x=2, scale_y=3, scale_z=1):
 
     return transformed_points, V
 
-def createConvexHull(points):
-    convex_hull = MyConvexHull(points)
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    poly3d = [np.array(convex_hull.vertices)[face] for face in convex_hull.faces]
-    ax.add_collection3d(Poly3DCollection(poly3d, facecolors='cyan', linewidths=1, edgecolors='r', alpha=0.25))
-
-    ax.scatter(np.array(convex_hull.vertices)[:, 0], np.array(convex_hull.vertices)[:, 1], np.array(convex_hull.vertices)[:, 2], color='b')
-
-    max_range = np.array([np.array(convex_hull.vertices)[:, 0].max() - np.array(convex_hull.vertices)[:, 0].min(),
-                          np.array(convex_hull.vertices)[:, 1].max() - np.array(convex_hull.vertices)[:, 1].min(),
-                          np.array(convex_hull.vertices)[:, 2].max() - np.array(convex_hull.vertices)[:, 2].min()]).max() / 2.0
-
-    mid_x = (np.array(convex_hull.vertices)[:, 0].max() + np.array(convex_hull.vertices)[:, 0].min()) * 0.5
-    mid_y = (np.array(convex_hull.vertices)[:, 1].max() + np.array(convex_hull.vertices)[:, 1].min()) * 0.5
-    mid_z = (np.array(convex_hull.vertices)[:, 2].max() + np.array(convex_hull.vertices)[:, 2].min()) * 0.5
-    ax.set_xlim(mid_x - max_range, mid_x + max_range)
-    ax.set_ylim(mid_y - max_range, mid_y + max_range)
-    ax.set_zlim(mid_z - max_range, mid_z + max_range)
-
-    ax.set_xlabel('X-axis')
-    ax.set_ylabel('Y-axis')
-    ax.set_zlabel('Z-axis')
-    plt.show()
-
-    return convex_hull
-
 def applyAffineTransformToEllipse(vertices, scale_x=2, scale_y=3, scale_z=1):
     """
     Застосовує афінне перетворення до набору вершин для перетворення кулі в еліпсоїд.
@@ -187,4 +190,21 @@ def applyAffineTransformToEllipse(vertices, scale_x=2, scale_y=3, scale_z=1):
     # Видалення гомогенної координати
     return transformed_vertices[:, :-1]
 
+def find_point_for_delete(convex_hull):
+    def edge_length(edge):
+        return np.linalg.norm(np.array(convex_hull.vertices[edge[0]]) - np.array(convex_hull.vertices[edge[1]]))
 
+    # 1. Знаходження найменшого ребра (по довжині)
+    min_edge = min(convex_hull.edges, key=edge_length)
+
+    # 2. Знаходження найменшого ребра серед ребер, що містять одну з точок min_edge[0] або min_edge[1]
+    candidate_edges = [edge for edge in convex_hull.edges if min_edge[0] in edge or min_edge[1] in edge]
+    candidate_edges.remove(min_edge)  # Видалення ребра min_edge з кандидатів
+
+    min_edge_2 = min(candidate_edges, key=edge_length)
+
+    # 3. Повернення індексу відповідної точки
+    if min_edge[0] in min_edge_2:
+        return min_edge[0]
+    else:
+        return min_edge[1]
