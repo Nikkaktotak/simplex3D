@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 import os
 
-# Константи
+
 number_of_repeating = 10  # кількість запусків програми з цими ж даними
 n = 0  # кількість точок всередині кулі
 r = 1000  # радіус кулі
