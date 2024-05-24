@@ -1,19 +1,18 @@
 <?xml version="1.0" ?>
 <statistics>
     <initial_point_count_block count="50">
+        <full_time>6.88</full_time>
         <pair>
             <target_vertex_count>10</target_vertex_count>
             <average_time>0.09</average_time>
-            <full_time>7.03</full_time>
-            <time_gain>78.11</time_gain>
-            <average_success_rate>56.03</average_success_rate>
+            <time_gain>76.44</time_gain>
+            <average_success_rate>58.23</average_success_rate>
         </pair>
         <pair>
             <target_vertex_count>20</target_vertex_count>
-            <average_time>0.23</average_time>
-            <full_time>7.03</full_time>
-            <time_gain>30.57</time_gain>
-            <average_success_rate>80.37</average_success_rate>
+            <average_time>0.21</average_time>
+            <time_gain>32.76</time_gain>
+            <average_success_rate>81.13</average_success_rate>
         </pair>
     </initial_point_count_block>
 </statistics>

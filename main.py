@@ -1,8 +1,4 @@
-# main.py
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-import numpy as np
-from scipy.spatial import ConvexHull
 import buildModelLib as ml
 import time
 from tqdm import tqdm
@@ -20,23 +16,28 @@ xml_file_path = "D:\\Article\\simplex3D\\statistics.xml"  # Шлях до XML ф
 # Створення кореневого елемента XML
 root = ET.Element("statistics")
 
-# Запуск функції повного перебору для кожного значення initial_point_counts один раз
+# Запуск функції повного перебору для значень initial_point_counts 50 та 100
 full_times = {}
-for initial_point_count in tqdm(initial_point_counts, desc="Виконання повного перебору для кожного значення initial_point_counts"):
-    # Генерація точок
-    points, V = ml.generatePoints(n, initial_point_count, r)
+for initial_point_count in [50, 100]:
+    if initial_point_count in initial_point_counts:
+        # Генерація точок
+        points, V = ml.generatePoints(n, initial_point_count, r)
 
-    # Запуск функції повного перебору на початковому наборі точок
-    start_full_time = time.time()
-    max_simplex_full, max_volume_full = ml.find_max_volume_simplex(points)
-    end_full_time = time.time()
-    full_time = end_full_time - start_full_time
+        # Запуск функції повного перебору на початковому наборі точок
+        start_full_time = time.time()
+        max_simplex_full, max_volume_full = ml.find_max_volume_simplex(points)
+        end_full_time = time.time()
+        full_time = end_full_time - start_full_time
 
-    # Зберігання часу повного перебору
-    full_times[initial_point_count] = full_time
+        # Зберігання часу повного перебору
+        full_times[initial_point_count] = full_time
 
 for initial_point_count in initial_point_counts:
     initial_block = ET.SubElement(root, "initial_point_count_block", count=str(initial_point_count))
+
+    # Додавання часу повного перебору до основного блоку
+    if initial_point_count in full_times:
+        ET.SubElement(initial_block, "full_time").text = f"{full_times[initial_point_count]:.2f}"
 
     for target_vertex_count in target_vertex_count_values:
         if target_vertex_count < initial_point_count:
@@ -82,14 +83,13 @@ for initial_point_count in initial_point_counts:
             average_success_rate = round(total_success_rate / number_of_repeating, 2)
 
             # Виграш у часі
-            full_time = round(full_times[initial_point_count], 2)
-            time_gain = round(full_time / average_time, 2)
+            full_time = round(full_times.get(initial_point_count, 0), 2)
+            time_gain = round(full_time / average_time, 2) if average_time != 0 else 0
 
             # Додавання результатів до XML
             pair_element = ET.SubElement(initial_block, "pair")
             ET.SubElement(pair_element, "target_vertex_count").text = str(target_vertex_count)
             ET.SubElement(pair_element, "average_time").text = f"{average_time:.2f}"
-            ET.SubElement(pair_element, "full_time").text = f"{full_time:.2f}"
             ET.SubElement(pair_element, "time_gain").text = f"{time_gain:.2f}"
             ET.SubElement(pair_element, "average_success_rate").text = f"{average_success_rate:.2f}"
 
