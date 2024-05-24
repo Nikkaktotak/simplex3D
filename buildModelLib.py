@@ -1,14 +1,15 @@
 import numpy as np
+from scipy.spatial import ConvexHull as SciPyConvexHull
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-import numpy as np
-from scipy.spatial import ConvexHull
 
-import numpy as np
-from scipy.spatial import ConvexHull as SciPyConvexHull
 
 class MyConvexHull:
     def __init__(self, points):
+        """
+        Ініціалізація об'єкта MyConvexHull.
+        Створює опуклу оболонку для заданих точок і візуалізує її.
+        """
         self.points = points
         self.vertices = []
         self.edges = []
@@ -18,6 +19,9 @@ class MyConvexHull:
         self.visualize()  # Побудова зображення після створення об'єкта
 
     def _compute_hull(self):
+        """
+        Обчислює опуклу оболонку для заданих точок, оновлює вершини, грані та ребра.
+        """
         hull = SciPyConvexHull(self.points)
         self.vertices = hull.points.tolist()
         self.faces = hull.simplices.tolist()
@@ -25,6 +29,15 @@ class MyConvexHull:
 
     @staticmethod
     def _compute_edges(faces):
+        """
+        Визначає всі унікальні ребра на основі заданих граней.
+
+        Parameters:
+            faces (list): Список граней.
+
+        Returns:
+            list: Список унікальних ребер.
+        """
         edges = set()
         for face in faces:
             start = face[0]
@@ -35,9 +48,15 @@ class MyConvexHull:
         return list(edges)
 
     def update(self, verticeForDelete):
+        """
+        Оновлює опуклу оболонку шляхом видалення вказаної вершини.
+
+        Parameters:
+            verticeForDelete (int): Індекс вершини, яку потрібно видалити.
+        """
         points = np.array(self.vertices)
 
-        # Find the neighbors of the vertex to be deleted
+        # Знаходження сусідів вершини, яку потрібно видалити
         hull = SciPyConvexHull(points)
         neighbors = set()
         for simplex in hull.simplices:
@@ -46,13 +65,13 @@ class MyConvexHull:
         neighbors.remove(verticeForDelete)
         neighbors = list(neighbors)
 
-        # Remove the vertex
+        # Видалення вершини
         points = np.delete(points, verticeForDelete, axis=0)
 
-        # Recompute the convex hull for the neighborhood
+        # Перебудова опуклої оболонки для сусідів
         sub_hull = SciPyConvexHull(points[neighbors])
 
-        # Update faces and edges
+        # Оновлення граней та ребер
         new_faces = sub_hull.simplices
         new_edges = set()
         for face in new_faces:
@@ -62,10 +81,10 @@ class MyConvexHull:
                 start = end
             new_edges.add(tuple(sorted((face[-1], face[0]))))
 
-        # Convert set to list
+        # Конвертація множини в список
         new_edges = list(new_edges)
 
-        # Map local indices back to global indices
+        # Мапування локальних індексів на глобальні індекси
         global_faces = []
         for face in new_faces:
             global_faces.append([neighbors[i] for i in face])
@@ -74,25 +93,31 @@ class MyConvexHull:
         for edge in new_edges:
             global_edges.append([neighbors[i] for i in edge])
 
-        # Update the attributes directly
+        # Оновлення атрибутів об'єкта
         self.vertices = points.tolist()
         self.edges = global_edges
         self.faces = global_faces
 
-        # Add the deleted vertex to the list
+        # Додавання видаленої вершини до списку
         self.deleted_vertices.append(verticeForDelete)
 
     def visualize(self):
-        fig = plt.figure()
+        """
+        Візуалізує поточну опуклу оболонку.
+        """
+        fig = plt.figure(figsize=(10, 8))  # Збільшений розмір фігури
         ax = fig.add_subplot(111, projection='3d')
 
+        # Використання вершин та граней для побудови полігонів
         poly3d = [np.array(self.vertices)[face] for face in self.faces]
-        ax.add_collection3d(Poly3DCollection(poly3d, facecolors='cyan', linewidths=1, edgecolors='r', alpha=0.25))
+        ax.add_collection3d(Poly3DCollection(poly3d, facecolors='pink', linewidths=1, edgecolors='k', alpha=0.25))
 
-        # Відображення вершин, окрім видалених
+        # Відображення всіх вершин
         vertices_array = np.array(self.vertices)
-        ax.scatter(vertices_array[:, 0], vertices_array[:, 1], vertices_array[:, 2], color='b')
+        ax.scatter(vertices_array[:, 0], vertices_array[:, 1], vertices_array[:, 2], color='k')
 
+        # Встановлення масштабу з відступами
+        padding = 0.1  # 10% padding
         max_range = np.array([vertices_array[:, 0].max() - vertices_array[:, 0].min(),
                               vertices_array[:, 1].max() - vertices_array[:, 1].min(),
                               vertices_array[:, 2].max() - vertices_array[:, 2].min()]).max() / 2.0
@@ -100,9 +125,10 @@ class MyConvexHull:
         mid_x = (vertices_array[:, 0].max() + vertices_array[:, 0].min()) * 0.5
         mid_y = (vertices_array[:, 1].max() + vertices_array[:, 1].min()) * 0.5
         mid_z = (vertices_array[:, 2].max() + vertices_array[:, 2].min()) * 0.5
-        ax.set_xlim(mid_x - max_range, mid_x + max_range)
-        ax.set_ylim(mid_y - max_range, mid_y + max_range)
-        ax.set_zlim(mid_z - max_range, mid_z + max_range)
+
+        ax.set_xlim(mid_x - max_range * (1 + padding), mid_x + max_range * (1 + padding))
+        ax.set_ylim(mid_y - max_range * (1 + padding), mid_y + max_range * (1 + padding))
+        ax.set_zlim(mid_z - max_range * (1 + padding), mid_z + max_range * (1 + padding))
 
         ax.set_xlabel('X-axis')
         ax.set_ylabel('Y-axis')
