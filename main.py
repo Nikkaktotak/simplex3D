@@ -12,41 +12,36 @@ from xml.dom import minidom
 number_of_repeating = 10  # кількість запусків програми з цими ж даними
 n = 0  # кількість точок всередині кулі
 r = 1000  # радіус кулі
-initial_point_counts = [50, 100, 200, 500]  # початкова кількість точок
-target_vertex_count_values = [10, 20, 50, 100]  # кількість точок, до якої потрібно видаляти вершини
-xml_file_path = "F:\Projects\simplex3D\statistics.xml"  # Шлях до XML файлу
+initial_point_counts = [500, 1000, 5000, 10000, 20000]  # початкова кількість точок
+target_vertex_count_values = [100]  # кількість точок, до якої потрібно видаляти вершини
+xml_file_path = "D:\\Article\\simplex3D\\statistics\\statistics2.xml"  # Шлях до XML файлу
 
 # Створення кореневого елемента XML
 root = ET.Element("statistics")
 
-# Запуск функції повного перебору для значень initial_point_counts 50 та 100
-full_times = {}
-for initial_point_count in [50, 100]:
-    if initial_point_count in initial_point_counts:
-        # Генерація точок
-        points, V = ml.generatePoints(n, initial_point_count, r)
-
-        # Запуск функції повного перебору на початковому наборі точок
-        start_full_time = time.time()
-        max_simplex_full, max_volume_full = ml.find_max_volume_simplex(points)
-        end_full_time = time.time()
-        full_time = end_full_time - start_full_time
-
-        # Зберігання часу повного перебору
-        full_times[initial_point_count] = full_time
+# Закоментовано: Запуск функції повного перебору для значень initial_point_counts 50 та 100
+# full_times = {}
+# for initial_point_count in [50, 100]:
+#     if initial_point_count in initial_point_counts:
+#         # Генерація точок
+#         points, V = ml.generatePoints(n, initial_point_count, r)
+#
+#         # Запуск функції повного перебору на початковому наборі точок
+#         start_full_time = time.time()
+#         max_simplex_full, max_volume_full = ml.find_max_volume_simplex(points)
+#         end_full_time = time.time()
+#         full_time = end_full_time - start_full_time
+#
+#         # Зберігання часу повного перебору
+#         full_times[initial_point_count] = full_time
 
 for initial_point_count in initial_point_counts:
     initial_block = ET.SubElement(root, "initial_point_count_block", count=str(initial_point_count))
 
-    # Додавання часу повного перебору до основного блоку
-    if initial_point_count in full_times:
-        ET.SubElement(initial_block, "full_time").text = f"{full_times[initial_point_count]:.2f}"
-
     for target_vertex_count in target_vertex_count_values:
         if target_vertex_count < initial_point_count:
-            # Для зберігання результатів
-            total_time = 0
             total_success_rate = 0
+            success_rates = []
 
             print(f"Запуск програми для пари (початкова кількість точок: {initial_point_count}, цільова кількість точок: {target_vertex_count})")
 
@@ -76,36 +71,36 @@ for initial_point_count in initial_point_counts:
 
                 # Розрахунок і виведення відсотка успішності
                 success_rate = (max_volume / V) * 100
-
-                # Сумування результатів
-                total_time += end_time - start_time
+                success_rates.append(success_rate)
                 total_success_rate += success_rate
 
+                # Додавання результатів до XML для кожного пробігу
+                run_element = ET.SubElement(initial_block, "run", number=str(i+1))
+                ET.SubElement(run_element, "target_vertex_count").text = str(target_vertex_count)
+                ET.SubElement(run_element, "success_rate").text = f"{success_rate:.2f}"
+
+                # Виведення результатів кожного пробігу
+                print(f"Результати пробігу {i+1} (початкова кількість точок: {initial_point_count}, цільова кількість точок: {target_vertex_count}):")
+                print("Відсоток наближеності значення об'єму:", success_rate, "%")
+                print()
+
             # Обчислення середніх значень
-            average_time = round(total_time / number_of_repeating, 2)
             average_success_rate = round(total_success_rate / number_of_repeating, 2)
+            best_success_rate = round(max(success_rates), 2)
+            worst_success_rate = round(min(success_rates), 2)
 
-            # Виграш у часі
-            if initial_point_count in full_times:
-                full_time = round(full_times[initial_point_count], 2)
-                time_gain = round(full_time / average_time, 2) if average_time != 0 else 0
-            else:
-                full_time = "N/A"
-                time_gain = "N/A"
-
-            # Додавання результатів до XML
-            pair_element = ET.SubElement(initial_block, "pair")
-            ET.SubElement(pair_element, "target_vertex_count").text = str(target_vertex_count)
-            ET.SubElement(pair_element, "average_time").text = f"{average_time:.2f}"
-            ET.SubElement(pair_element, "time_gain").text = str(time_gain)
-            ET.SubElement(pair_element, "average_success_rate").text = f"{average_success_rate:.2f}"
+            # Додавання середнього значення успішності до XML
+            average_element = ET.SubElement(initial_block, "average")
+            ET.SubElement(average_element, "target_vertex_count").text = str(target_vertex_count)
+            ET.SubElement(average_element, "average_success_rate").text = f"{average_success_rate:.2f}"
+            ET.SubElement(average_element, "best_success_rate").text = f"{best_success_rate:.2f}"
+            ET.SubElement(average_element, "worst_success_rate").text = f"{worst_success_rate:.2f}"
 
             # Виведення середніх результатів
-            print(f"\nРезультати для пари (початкова кількість точок: {initial_point_count}, цільова кількість точок: {target_vertex_count}):")
-            print("Середній час виконання одного пробігу програми:", average_time, "секунд")
-            print("Час виконання повного перебору:", full_time, "секунд")
-            print("Виграш у часі:", time_gain, "разів" if time_gain != "N/A" else "N/A")
-            print("Середній відсоток наближеності значення обєму:", average_success_rate, "%")
+            print(f"\nСередні результати для пари (початкова кількість точок: {initial_point_count}, цільова кількість точок: {target_vertex_count}):")
+            print("Середній відсоток наближеності значення об'єму:", average_success_rate, "%")
+            print("Найкращий відсоток наближеності значення об'єму:", best_success_rate, "%")
+            print("Найгірший відсоток наближеності значення об'єму:", worst_success_rate, "%")
             print()
 
 # Запис результатів у XML файл з гарним форматуванням
