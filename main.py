@@ -1,4 +1,7 @@
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+import numpy as np
+from scipy.spatial import ConvexHull
 import buildModelLib as ml
 import time
 from tqdm import tqdm
@@ -83,21 +86,25 @@ for initial_point_count in initial_point_counts:
             average_success_rate = round(total_success_rate / number_of_repeating, 2)
 
             # Виграш у часі
-            full_time = round(full_times.get(initial_point_count, 0), 2)
-            time_gain = round(full_time / average_time, 2) if average_time != 0 else 0
+            if initial_point_count in full_times:
+                full_time = round(full_times[initial_point_count], 2)
+                time_gain = round(full_time / average_time, 2) if average_time != 0 else 0
+            else:
+                full_time = "N/A"
+                time_gain = "N/A"
 
             # Додавання результатів до XML
             pair_element = ET.SubElement(initial_block, "pair")
             ET.SubElement(pair_element, "target_vertex_count").text = str(target_vertex_count)
             ET.SubElement(pair_element, "average_time").text = f"{average_time:.2f}"
-            ET.SubElement(pair_element, "time_gain").text = f"{time_gain:.2f}"
+            ET.SubElement(pair_element, "time_gain").text = str(time_gain)
             ET.SubElement(pair_element, "average_success_rate").text = f"{average_success_rate:.2f}"
 
             # Виведення середніх результатів
             print(f"\nРезультати для пари (початкова кількість точок: {initial_point_count}, цільова кількість точок: {target_vertex_count}):")
             print("Середній час виконання одного пробігу програми:", average_time, "секунд")
             print("Час виконання повного перебору:", full_time, "секунд")
-            print("Виграш у часі:", time_gain, "разів")
+            print("Виграш у часі:", time_gain, "разів" if time_gain != "N/A" else "N/A")
             print("Середній відсоток наближеності значення обєму:", average_success_rate, "%")
             print()
 
