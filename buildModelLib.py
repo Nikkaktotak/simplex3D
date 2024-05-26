@@ -32,8 +32,19 @@ class MyConvexHull:
             edges.add(tuple(sorted((face[-1], face[0]))))
         return list(edges)
 
-    def update(self, verticeForDelete):
+    def update(self, pointForDelete):
         points = np.array(self.vertices)
+
+        # Find the index of the vertex to be deleted
+        verticeForDelete = None
+        for i, point in enumerate(points):
+            if np.array_equal(point, pointForDelete):
+                verticeForDelete = i
+                break
+
+        # If the point is not found, return
+        if verticeForDelete is None:
+            return
 
         # Find the neighbors of the vertex to be deleted
         hull = SciPyConvexHull(points)
@@ -211,17 +222,21 @@ def find_point_for_delete(convex_hull):
     # 1. Знаходження найменшого ребра (по довжині)
     min_edge = min(convex_hull.edges, key=edge_length)
 
-    # 2. Знаходження найменшого ребра серед ребер, що містять одну з точок min_edge[0] або min_edge[1]
-    candidate_edges = [edge for edge in convex_hull.edges if min_edge[0] in edge or min_edge[1] in edge]
-    candidate_edges.remove(min_edge)  # Видалення ребра min_edge з кандидатів
+    # 2. Знаходження всіх ребер, що містять одну з точок min_edge[0] або min_edge[1]
+    candidate_edges_i = [edge for edge in convex_hull.edges if min_edge[0] in edge]
+    candidate_edges_j = [edge for edge in convex_hull.edges if min_edge[1] in edge]
+    candidate_edges_i.remove(min_edge)
+    candidate_edges_j.remove(min_edge)
 
-    min_edge_2 = min(candidate_edges, key=edge_length)
+    # 3. Знаходження найменших ребер серед кандидатів
+    min_edge_i = min(candidate_edges_i, key=edge_length)
+    min_edge_j = min(candidate_edges_j, key=edge_length)
 
-    # 3. Повернення індексу відповідної точки
-    if min_edge[0] in min_edge_2:
-        return min_edge[0]
+    # 4. Порівняння довжин та повернення координат відповідної точки
+    if edge_length(min_edge_i) > edge_length(min_edge_j):
+        return convex_hull.vertices[min_edge[1]]
     else:
-        return min_edge[1]
+        return convex_hull.vertices[min_edge[0]]
 
 
 def calculate_tetrahedron_volume(points):

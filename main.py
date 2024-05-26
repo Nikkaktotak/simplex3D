@@ -10,11 +10,11 @@ from xml.dom import minidom
 import os
 
 
-number_of_repeating = 10  # кількість запусків програми з цими ж даними
+number_of_repeating = 3  # кількість запусків програми з цими ж даними
 n = 0  # кількість точок всередині кулі
 r = 1000  # радіус кулі
-initial_point_counts = [500, 1000, 2000, 5000, 10000, 15000]  # початкова кількість точок
-target_vertex_count_values = [100]  # кількість точок, до якої потрібно видаляти вершини
+initial_point_counts = [500]  # початкова кількість точок
+target_vertex_count_values = [50]  # кількість точок, до якої потрібно видаляти вершини
 xml_file_path = os.path.join(os.path.dirname(__file__), "statistics/statistics2.xml")  # Шлях до XML файлу
 
 # Створення кореневого елемента XML
