@@ -1,7 +1,3 @@
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-import numpy as np
-from scipy.spatial import ConvexHull
 import buildModelLib as ml
 import time
 from keras.utils import Progbar
@@ -15,7 +11,7 @@ n = 0  # кількість точок всередині кулі
 r = 100  # радіус кулі
 initial_point_counts = [500, 1000, 2000, 5000, 10000, 15000]  # початкова кількість точок
 target_vertex_count_values = [100]  # кількість точок, до якої потрібно видаляти вершини
-xml_file_path = os.path.join(os.path.dirname(__file__), "statistics/statistics2.xml")  # Шлях до XML файлу
+xml_file_path = os.path.join(os.path.dirname(__file__), "statistics/statistics.xml")  # Шлях до XML файлу
 
 # Створення кореневого елемента XML
 root = ET.Element("statistics")
